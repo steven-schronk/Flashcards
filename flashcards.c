@@ -2,15 +2,29 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
-struct Scores {
+typedef struct {
+	int a;
+	int b;
+	int neg_count;
+} Problem;
+
+struct {
 	int correct;
 	int count;
 	int table;
 	int max;
 	int last;
+	Problem *incorrect[10];
 	char function;
 } scores;
+
+struct {
+	int a;
+	int b;
+	int answer;
+} last_problem;
 
 void clear_screen()
 {
@@ -55,7 +69,11 @@ void score_report()
 
 	if(scores.count > 0)
 	{
-		if(scores.last == 1) { printf("CORRECT!\n"); } else { printf("INCORRECT\n"); }
+		if(scores.last == 1) { printf("CORRECT!\t");
+		} else {
+			printf("INCORRECT\t");
+			printf("%d %c %d = %d\n\n", last_problem.a, scores.function, last_problem.b, last_problem.answer);
+		}
 	}
 
 	printf("\n\n");
@@ -68,6 +86,9 @@ void problem()
 	int multiplicand = 0;
 	int position = 0;
 	int response;
+	int correct;
+
+	while(getchar() != '\n') continue;
 
 	if(scores.table == 0)
 	{
@@ -92,18 +113,26 @@ void problem()
 	switch(scores.function)
 	{
 		case '+':
-			if(response == multiplier + multiplicand) { answer = true; }
+			correct = multiplier + multiplicand;
+			if(response == correct) { answer = true; }
 			break;
 		case '-':
-			if(response == multiplier - multiplicand) { answer = true; }
+			correct = multiplier - multiplicand;
+			if(response == correct) { answer = true; }
 			break;
 		case '/':
-			if(response == multiplier / multiplicand) { answer = true; }
+			correct = multiplier / multiplicand;
+			if(response == correct) { answer = true; }
 			break;
 		case '*':
-			if(response == multiplier * multiplicand) { answer = true; }
+			correct = multiplier * multiplicand;
+			if(response == correct) { answer = true; }
 			break;
 	}
+
+	last_problem.a = multiplicand;
+	last_problem.b = multiplier;
+	last_problem.answer = correct;
 
 	if(answer == true)
 	{
@@ -117,8 +146,6 @@ void problem()
 
 int main()
 {
-	int cont = 0;
-
 	srand(time(0));
 	entrance();
 	select_table();
