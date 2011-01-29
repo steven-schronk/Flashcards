@@ -4,6 +4,23 @@
 #include <string.h>
 #include <time.h>
 
+#define RESET 		0
+#define BRIGHT		1
+#define DIM		2
+#define UNDERLINE	3
+#define BLINK		4
+#define REVERSE		7
+#define HIDDENT		8
+
+#define BLACK		0
+#define RED		1
+#define GREEN		2
+#define YELLOW		3
+#define BLUE		4
+#define MAGENTA		5
+#define CYAN		6
+#define WHITE		7
+
 typedef struct {
 	int a;
 	int b;
@@ -31,11 +48,20 @@ void clear_screen()
 	system("clear");
 }
 
+void color(int attr, int fg, int bg)
+{
+	char com[13];
+	sprintf(com, "%c[%d;%d;%dm", 0x1B, attr, fg+30, bg+40);
+	printf("%s", com);
+}
+
 void entrance()
 {
 	clear_screen();
-	printf("\n\nWelcome to Flashcards.\n\nPlease select the Multiplication Table you would like to use.\n");
+	color(BRIGHT, RED, BLACK);
+	printf("\n\nWelcome to Flashcards.\n\nPlease select the function you would like to practice.\n");
 	printf("To practice a set of tables, please enter the number.\nEntering Zero will use all tables.\n");
+	color(RESET, WHITE, BLACK);
 }
 
 void select_table()
@@ -58,8 +84,8 @@ void score_report()
 	float percent = 0.0;
 
 	if(scores.count > 0) { percent = (((float)scores.correct / (float)scores.count) * 100); }
-	printf("\n\nCount %d\n", scores.count);
-	printf("Correct: %d\t\tIncorrect: %d\n", scores.correct, scores.count-scores.correct);
+	printf("\n\nCount:   %d\n", scores.count);
+	printf(    "Correct: %d\t\tIncorrect: %d\n", scores.correct, scores.count-scores.correct);
 	if(scores.count > 0)
 	{
 		printf("%% Correct %10.2f\n\n", percent);
@@ -152,4 +178,3 @@ int main()
 	while(true) { clear_screen(); score_report(); problem(); }
 	return 1;
 }
-
