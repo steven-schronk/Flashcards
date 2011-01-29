@@ -50,9 +50,7 @@ void clear_screen()
 
 void color(int attr, int fg, int bg)
 {
-	char com[13];
-	sprintf(com, "%c[%d;%d;%dm", 0x1B, attr, fg+30, bg+40);
-	printf("%s", com);
+	printf("%c[%d;%d;%dm", 0x1B, attr, fg+30, bg+40);
 }
 
 void entrance()
@@ -67,12 +65,16 @@ void entrance()
 void select_table()
 {
 	do {
-		printf("\nSelect function to practice (+-*/): ");
+		printf("\nSelect function to practice (");
+		color(BRIGHT, GREEN, BLACK);
+		printf("+-*/");
+		color(RESET, WHITE, BLACK);
+		printf("): ");
 		scanf("%c", &scores.function);
 		while(getchar() != '\n') continue;
 	} while (strchr("+-*/", scores.function) == NULL);
 
-	printf("Select the table to practice: ");
+	printf("Select the table to practice (0 for all):");
 	scanf("%d", &scores.table);
 
 	printf("Enter max number in set: ");
@@ -88,21 +90,25 @@ void score_report()
 	printf(    "Correct: %d\t\tIncorrect: %d\n", scores.correct, scores.count-scores.correct);
 	if(scores.count > 0)
 	{
-		printf("%% Correct %10.2f\n\n", percent);
+		printf("%% Correct %10.2f\n", percent);
 	} else {
-		printf("%% Correct: \n\n");
+		printf("%% Correct: \n");
 	}
 
 	if(scores.count > 0)
 	{
-		if(scores.last == 1) { printf("CORRECT!\t");
+		if(scores.last == 1) {
+			color(BRIGHT, GREEN, BLACK);
+			printf("CORRECT!\t");
+			
 		} else {
+			color(BRIGHT, RED, BLACK);
 			printf("INCORRECT\t");
-			printf("%d %c %d = %d\n\n", last_problem.a, scores.function, last_problem.b, last_problem.answer);
+			printf("%d %c %d = %d", last_problem.a, scores.function, last_problem.b, last_problem.answer);
 		}
 	}
-
-	printf("\n\n");
+	color(RESET, WHITE, BLACK);
+	printf("\n");
 }
 
 void problem()
@@ -122,7 +128,7 @@ void problem()
 		multiplier   = rand() % (scores.max + 1);
 	} else {
 		position = rand() % 2;
-		printf("Position of Table: %d\n", position);
+		/* printf("Position of Table: %d\n", position); */
 		if(position == 0)
 		{
 			multiplicand = scores.table;
