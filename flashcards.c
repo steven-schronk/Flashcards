@@ -1,19 +1,21 @@
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 #include <time.h>
 
 #define RESET 		0
 #define BRIGHT		1
-#define DIM		2
+#define DIM			2
 #define UNDERLINE	3
 #define BLINK		4
 #define REVERSE		7
 #define HIDDENT		8
 
 #define BLACK		0
-#define RED		1
+#define RED			1
 #define GREEN		2
 #define YELLOW		3
 #define BLUE		4
@@ -21,20 +23,17 @@
 #define CYAN		6
 #define WHITE		7
 
-typedef struct {
-	int a;
-	int b;
-	int neg_count;
-} Problem;
-
 struct {
 	int correct;
-	int count;
+	int count;		/* number of problems completed */
 	int table;
 	int max;
+	int min;		/* min number to test (some modes) */
+	int mode;		/* current mode of testing */
+	int swap;		/* computer changes which position table is in */
 	int last;
-	Problem *incorrect[10];
-	char function;
+	int retry;		/* retry same problem on bad answer */
+	char function;	/* stores function to drill */
 } scores;
 
 struct {
@@ -47,6 +46,17 @@ void clear_screen()
 {
 	system("clear");
 }
+
+/* generate random number from min to max */
+int random_int(int min, int max){
+	assert(min > INT_MIN);
+	assert(max < INT_MAX / 2);
+	assert(max >= min);
+	return rand() % max + min;
+}
+
+/* seed random number generator */
+void random_seed(){ srand(time(0)); }
 
 void color(int attr, int fg, int bg)
 {
@@ -124,18 +134,17 @@ void problem()
 
 	if(scores.table == 0)
 	{
-		multiplicand = rand() % (scores.max + 1);
-		multiplier   = rand() % (scores.max + 1);
+		multiplicand = random_int(scores.min, scores.max);
+		multiplier   = random_int(scores.min, scores.max);
 	} else {
 		position = rand() % 2;
-		/* printf("Position of Table: %d\n", position); */
 		if(position == 0)
 		{
 			multiplicand = scores.table;
-			multiplier   = rand() % (scores.max + 1);
+			multiplier   = random_int(scores.min, scores.max);
 		} else {
 			multiplier = scores.table;
-			multiplicand = rand() % (scores.max + 1);
+			multiplier   = random_int(scores.min, scores.max);
 		}
 	}
 
@@ -178,7 +187,7 @@ void problem()
 
 int main()
 {
-	srand(time(0));
+	random_seed();
 	entrance();
 	select_table();
 	while(true) { clear_screen(); score_report(); problem(); }

@@ -1,27 +1,19 @@
 CC=gcc
 
-CFLAGS_REL=-Wall -ansi -O0
-#CFLAGS_DBG=-Wall -Werror -pedantic -std=c99 -ansi -DDEBUG -g -O0 -ggdb3 -Wextra -Wno-missing-field-initializers
 CFLAGS_DBG=-Wall -pedantic -std=c99 -ansi -DDEBUG -g -O0 -ggdb3 -Wextra -Wno-missing-field-initializers
-CFLAGS_SML=-Wall -ansi -Os
+CFLAGS_REL=-Os
 
 OBJS=flashcards.c
-OUT=-o flashcards
+PROG=flashcards
 
-asmcompile: $(OBJS)
-	$(CC) $(CFLAGS_REL) $(OUT) $^
+all: $(PROG)
 
-asmlink: asm.o
-	gcc -o flashcards flashcards.o
+flashcards: $(OBJS)
+	$(CC) $(CFLAGS_DBG) $(OBJS) -o $(PROG)
 
-asm: asmlink
-
-small: $(OBJS)
-	$(CC) $(CFLAGS_SML) $(OUT) $^ 
-
-debug: $(OBJS)
-	$(CC) $(CFLAGS_DBG) $(OUT) $^
+release: $(OBJS)
+	$(CC) $(CFLAGS_REL) $(OBJS) -o $(PROG)
+	strip -R .comment -R .note -R .nont.ABI-tag $(PROG)
 
 clean:
-	rm -f flashcards *.o
-
+	rm -rf *o flashcards
