@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -24,28 +25,26 @@
 #define WHITE		7
 
 struct {
-	int correct;
+	int correct;	/* number of problems counted correct */
 	int count;		/* number of problems completed */
 	int table;
-	int max;
+	int max;		/* max number to test (all modes) */
 	int min;		/* min number to test (some modes) */
 	int mode;		/* current mode of testing */
 	int swap;		/* computer changes which position table is in */
-	int last;
+	int last;		/* was last problem correct? */
 	int retry;		/* retry same problem on bad answer */
-	char function;	/* stores function to drill */
-} scores;
+	int a;			/* first part of problem */
+	int b;			/* second part of problem */
+	int answer;		/* answer to problem */
+	char func;		/* stores function to drill */
+} s = { 0,0,0,-1,-1,-1,-1,-1,-1,-1,-1,' ' };
 
-struct {
-	int a;
-	int b;
-	int answer;
-} last_problem;
-
-void clear_screen()
-{
-	system("clear");
+void color(int attr, int fg, int bg){
+	printf("%c[%d;%d;%dm", 0x1B, attr, fg+30, bg+40);
 }
+
+void clear_screen(){ system("clear"); }
 
 /* generate random number from min to max */
 int random_int(int min, int max){
@@ -58,138 +57,223 @@ int random_int(int min, int max){
 /* seed random number generator */
 void random_seed(){ srand(time(0)); }
 
-void color(int attr, int fg, int bg)
-{
-	printf("%c[%d;%d;%dm", 0x1B, attr, fg+30, bg+40);
-}
-
-void entrance()
-{
-	clear_screen();
-	color(BRIGHT, RED, BLACK);
-	printf("\n\nWelcome to Flashcards.\n\nPlease select the function you would like to practice.\n");
-	printf("To practice a set of tables, please enter the number.\nEntering Zero will use all tables.\n");
-	color(RESET, WHITE, BLACK);
-}
-
-void select_table()
-{
-	do {
-		printf("\nSelect function to practice (");
+void get_function(){
+	do{
+		while(getchar() != '\n'); /* clear stdin buffer */
+		printf("\nSelect Function to Drill (");
 		color(BRIGHT, GREEN, BLACK);
-		printf("+-*/");
+		printf("+*-/");
 		color(RESET, WHITE, BLACK);
 		printf("): ");
-		scanf("%c", &scores.function);
-		while(getchar() != '\n') continue;
-	} while (strchr("+-*/", scores.function) == NULL);
-
-	printf("Select the table to practice (0 for all):");
-	scanf("%d", &scores.table);
-
-	printf("Enter max number in set: ");
-	scanf("%d", &scores.max);
+		scanf("%c", &s.func);
+	}while(s.func != '+' && s.func != '*' && s.func != '-' && s.func != '/');
 }
 
-void score_report()
-{
+void get_table(){
+	do{
+		while(getchar() != '\n'); /* clear stdin buffer */
+		printf("\nEnter Number of Table to Drill: ");
+		scanf("%d", &s.table);
+	}while(s.table <= 0);
+}
+
+void get_swap(){
+	do{
+		while(getchar() != '\n'); /* clear stdin buffer */
+		printf("\nSwap Values in Problem (");
+		color(BRIGHT, GREEN, BLACK);
+		printf("Yy/Nn");
+		color(RESET, WHITE, BLACK);
+		printf("): ");
+		s.swap = tolower(getchar());
+	}while(s.swap != 'y' && s.swap != 'n');
+	if(s.swap == 'y') { s.swap = 1; } else { s.swap = 0; }
+}
+
+void get_retry(){
+	do{
+		while(getchar() != '\n'); /* clear stdin buffer */
+		printf("\nRetry on Bad Answers (");
+		color(BRIGHT, GREEN, BLACK);
+		printf("Yy/Nn");
+		color(RESET, WHITE, BLACK);
+		printf("): ");
+		s.retry = tolower(getchar());
+	}while(s.retry != 'y' && s.retry != 'n' );
+	if(s.retry == 'y') { s.retry = 1; } else { s.retry = 0; }
+}
+
+void get_min_max(){
+	int count = 0;
+	do{
+		while(getchar() != '\n'); /* clear stdin buffer */
+		printf("\nEnter Minimum Value: ");
+		scanf("%d",&s.min);
+	}while(s.min <= 0);
+	do{
+		while(getchar() != '\n'); /* clear stdin buffer */
+		if(s.min > s.max && count > 0) { printf("Max must be more than Min.\n"); }
+		printf("\nEnter Maximum Value: ");
+		scanf("%d",&s.max);
+		++count;
+	}while(s.max < s.min);
+}
+
+void menu_main(){
+	clear_screen();
+	color(BRIGHT, BLUE, BLACK);
+	printf("\n\nWelcome to Flashcards.\n\nPlease select the function you would like to practice.\n");
+	printf("To practice a set of tables, please enter the number.\nEntering Zero will use all tables.\n\n");
+	color(BRIGHT, RED, BLACK);
+	printf("You can press 'Q' or 'q' at any time to quit.\n\n");
+	color(RESET, WHITE, BLACK);
+	printf("MAIN MENU\n");
+	printf("\t1. Drill One Table\n");
+	printf("\t2. Drill Multiple Tables\n");
+	printf("\t3. Drill All Tables and Functions\n");
+	printf("\n Please Enter Your Selection: ");
+}
+
+void menu_one_table(){
+	get_function();
+	get_table();
+	get_min_max();
+	get_swap();
+	get_retry();
+}
+
+void menu_mult_table(){
+	get_function();
+	get_min_max();
+	get_retry();
+}
+
+void menu_all(){
+	get_min_max();
+	get_retry();
+}
+
+void score_report(){
 	float percent = 0.0;
 
-	if(scores.count > 0) { percent = (((float)scores.correct / (float)scores.count) * 100); }
-	printf("\n\nCount:   %d\n", scores.count);
-	printf(    "Correct: %d\t\tIncorrect: %d\n", scores.correct, scores.count-scores.correct);
-	if(scores.count > 0)
-	{
-		printf("%% Correct %10.2f\n", percent);
+	if(s.count > 0) { percent = (((float)s.correct / (float)s.count) * 100); }
+	printf("\n\nCount:   %d\n", s.count);
+	printf("Correct: %d\nIncorrect: %d\n", s.correct, s.count-s.correct);
+	if(s.count > 0){
+		printf("%% Correct:\t%10.2f\n", percent);
 	} else {
 		printf("%% Correct: \n");
 	}
 
-	if(scores.count > 0)
-	{
-		if(scores.last == 1) {
+	if(s.count > 0){
+		if(s.last == 1){
 			color(BRIGHT, GREEN, BLACK);
 			printf("CORRECT!\t");
-			
 		} else {
 			color(BRIGHT, RED, BLACK);
 			printf("INCORRECT\t");
-			printf("%d %c %d = %d", last_problem.a, scores.function, last_problem.b, last_problem.answer);
+			if(s.mode == 1){
+				printf("%d %c %d = %d", s.a, s.func, s.table, s.answer);
+			} else {
+				printf("%d %c %d = %d", s.a, s.func, s.b, s.answer);
+			}
 		}
 	}
 	color(RESET, WHITE, BLACK);
 	printf("\n");
 }
 
-void problem()
+void run_probs()
 {
-	int answer = 0;
-	int multiplier = 0;
-	int multiplicand = 0;
-	int position = 0;
-	int response;
-	int correct;
+	int cont = 1;
+	int temp_ans;
+	s.b = s.table; /* this for mode 1 */
+	while(cont){
+		score_report();
+		/* generate random data for problem */
+		s.a = random_int(s.min,s.max);
+		if(s.mode != 1) { s.b = random_int(s.min,s.max); }
 
-	while(getchar() != '\n') continue;
-
-	if(scores.table == 0)
-	{
-		multiplicand = random_int(scores.min, scores.max);
-		multiplier   = random_int(scores.min, scores.max);
-	} else {
-		position = rand() % 2;
-		if(position == 0)
-		{
-			multiplicand = scores.table;
-			multiplier   = random_int(scores.min, scores.max);
-		} else {
-			multiplier = scores.table;
-			multiplier   = random_int(scores.min, scores.max);
+		/* generate new function for mode 3 */
+		if(s.mode == 3) {
+			temp_ans = random_int(0,5);
+			switch(temp_ans){
+				case 0:
+					s.func = '+';
+					break;
+				case 1:
+					s.func = '-';
+					break;
+				case 2:
+					s.func = '*';
+					break;
+				case 3:
+					s.func = '/';
+					break;
+			}
 		}
+		/* calculate answer for problem based on table*/
+		switch(s.func){
+			case '+':
+				s.answer = s.a + s.b;
+				break;
+			case '-':
+				s.answer = s.a - s.b;
+				break;
+			case '*':
+				s.answer = s.a * s.b;
+				break;
+			case '/':
+				s.answer = s.a / s.b;
+				break;
+		}
+		/* print problem on screen with prompt */
+		if(s.swap){
+			temp_ans = random_int(0,2);
+			if(temp_ans == 1){
+				printf("%d %c %d = ", s.a, s.func, s.b);
+			}else{
+				printf("%d %c %d = ", s.b, s.func, s.a);
+			}
+		}else{
+			printf("%d %c %d = ", s.a, s.func, s.b);
+		}
+		/* get user answer */
+		scanf("%d", &temp_ans);
+		printf("Answer received:%d\n", temp_ans);
+		if(tolower(temp_ans) == 'q'){ break; }
+		/* test for correct answer */
+		if(temp_ans == s.answer){
+			s.correct++;
+			s.last = 1;
+		} else { s.last = 0; }
+		s.count++;
 	}
-
-	printf("%d %c %d = ", multiplicand, scores.function, multiplier);
-	scanf("%d", &response);
-
-	switch(scores.function)
-	{
-		case '+':
-			correct = multiplier + multiplicand;
-			if(response == correct) { answer = true; }
-			break;
-		case '-':
-			correct = multiplier - multiplicand;
-			if(response == correct) { answer = true; }
-			break;
-		case '/':
-			correct = multiplier / multiplicand;
-			if(response == correct) { answer = true; }
-			break;
-		case '*':
-			correct = multiplier * multiplicand;
-			if(response == correct) { answer = true; }
-			break;
-	}
-
-	last_problem.a = multiplicand;
-	last_problem.b = multiplier;
-	last_problem.answer = correct;
-
-	if(answer == true)
-	{
-		scores.correct++;
-		scores.last = 1;
-	} else {
-		scores.last = 0;
-	}
-	scores.count++;
 }
 
 int main()
 {
+	char opt;
 	random_seed();
-	entrance();
-	select_table();
-	while(true) { clear_screen(); score_report(); problem(); }
-	return 1;
+	menu_main();
+	opt = getchar();
+	switch(opt){
+		case '1':
+			menu_one_table();
+			s.mode = 1;
+			break;
+		case '2':
+			menu_mult_table();
+			s.mode = 2;
+			break;
+		case '3':
+			menu_all();
+			s.mode = 3;
+			break;
+		default:
+			menu_main();
+			break;
+	}
+	run_probs();
+	return EXIT_SUCCESS;
 }
